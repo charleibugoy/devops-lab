@@ -76,9 +76,9 @@ variable "workstation_instance_type" {
   default     = "t3.micro"
 }
 
-#variable "workstation_public_key" {
- # description = "Your public SSH key to access the workstation. Example: 'ssh-rsa AAAA...'"
-  #type        = string
-  #sensitive   = true
-#}
+variable "workstation_public_key" {
+  description = "Your public SSH key to access the workstation. Example: 'ssh-rsa AAAA...'"
+  type        = string
+  sensitive   = true
+}
 
