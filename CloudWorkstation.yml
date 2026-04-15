@@ -1,0 +1,117 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  Creates a personal Cloud Workstation. This EC2 instance will have Git pre-installed
+  and will serve as a secure, remote development environment. It is designed to be
+  launched into the VPC created by your 'Core-Network' stack.
+
+Parameters:
+  NetworkStackName:
+    Description: >-
+      The name of the CloudFormation stack that contains your core networking resources
+      (e.g., 'Core-Network').
+    Type: String
+    MinLength: 1
+    AllowedPattern: '^[a-zA-Z][-a-zA-Z0-9]*$'
+
+  AdminKeyPairName:
+    Description: >-
+      Name of your existing EC2 KeyPair. This key will be used for administrative SSH
+      access to this workstation (as ec2-user).
+    Type: AWS::EC2::KeyPair::KeyName
+
+  InstanceType:
+    Description: EC2 instance type for the Cloud Workstation.
+    Type: String
+    Default: t3.micro
+    AllowedValues:
+      - t2.micro
+      - t3.micro
+      - t2.small
+      - t3.small
+    ConstraintDescription: Must be a valid EC2 instance type.
+
+  YourIpForSsh:
+    Description: >-
+      Your computer's public IP address range (CIDR format) for SSH access.
+      For security, do not leave this as 0.0.0.0/0.
+    Type: String
+    Default: 0.0.0.0/0
+    AllowedPattern: '(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})'
+
+Resources:
+  WorkstationSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allows secure SSH access to the Cloud Workstation
+      VpcId:
+        Fn::ImportValue: !Sub '${NetworkStackName}-VPCID'
+      SecurityGroupIngress:
+        # Rule for administrative SSH access from your specified IP
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref YourIpForSsh
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-SG'
+
+  CloudWorkstationInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      SecurityGroupIds:
+        - !Ref WorkstationSG
+      KeyName: !Ref AdminKeyPairName
+      ImageId: '{{resolve:ssm:/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2}}'
+      SubnetId:
+        Fn::ImportValue: !Sub '${NetworkStackName}-PublicSubnetID'
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-Instance'
+      UserData:
+        # This script runs once when the instance first boots up
+        Fn::Base64: |
+          #!/bin/bash
+          yum update -y
+          # Core tools
+          yum install -y git unzip curl jq tar
+          # Docker
+          yum install -y docker
+          systemctl enable docker
+          systemctl start docker
+          usermod -aG docker ec2-user
+          # AWS CLI
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o aws.zip
+          unzip aws.zip
+          ./aws/install
+          # Terraform
+          yum install -y yum-utils
+          yum-config-manager --add-repo https://rpm.releases.hashicorp.com/AmazonLinux/hashicorp.repo
+          yum install -y terraform
+          # kubectl (EKS compatible)
+          curl -o kubectl https://s3.amazonaws.com/amazon-eks/1.29.0/2023-11-14/bin/linux/amd64/kubectl
+          chmod +x kubectl
+          mv kubectl /usr/local/bin/
+          # Helm
+          curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+          # Node.js
+          curl -fsSL https://rpm.nodesource.com/setup_18.x | bash -
+          yum install -y nodejs
+          # k6 load testing
+          yum install -y https://dl.k6.io/rpm/repo.rpm
+          yum install -y k6
+          mkdir -p /home/ec2-user/devops-lab
+          chown -R ec2-user:ec2-user /home/ec2-user/devops-lab
+
+          echo "Cloud Workstation setup complete." > /home/ec2-user/status.txt
+
+Outputs:
+  InstanceId:
+    Description: The Instance ID of your Cloud Workstation.
+    Value: !Ref CloudWorkstationInstance
+  PublicDnsName:
+    Description: The public DNS name of your Cloud Workstation.
+    Value: !GetAtt CloudWorkstationInstance.PublicDnsName
+  SshCommand:
+    Description: The command to SSH into your Cloud Workstation.
+    Value: !Sub 'ssh -i "YourAdminKey.pem" ec2-user@${CloudWorkstationInstance.PublicDnsName}'

@@ -1,0 +1,98 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  Creates a standard VPC with one public subnet, an Internet Gateway, and a
+  Route Table. This stack exports the VPC ID and the Public Subnet ID to be
+  used by other stacks.
+
+Parameters:
+  VpcCidr:
+    Description: CIDR block for the VPC.
+    Type: String
+    Default: '10.0.0.0/16'
+  PublicSubnetCidr:
+    Description: CIDR block for the public subnet.
+    Type: String
+    Default: '10.0.1.0/24'
+  PrivateSubnetCidr:
+    Description: CIDR block for the private subnet.
+    Type: String
+    Default: '10.0.2.0/24'
+
+Resources:
+  # A Virtual Private Cloud (VPC) to house our resources
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCidr
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-VPC'
+
+  # An Internet Gateway to allow communication with the internet
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-IGW'
+
+  # Attaches the Internet Gateway to our VPC
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+  # A public subnet where resources can be accessed from the internet
+  PublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref PublicSubnetCidr
+      MapPublicIpOnLaunch: true # Automatically assign public IPs to instances
+      AvailabilityZone: !Select [ 0, !GetAZs '' ] # Use the first AZ in the region
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-Public-Subnet'
+
+  # The route table for our public subnet
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-Public-Route-Table'
+
+  # A route that directs all outbound internet traffic (0.0.0.0/0) to the Internet Gateway
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: AttachGateway
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: '0.0.0.0/0'
+      GatewayId: !Ref InternetGateway
+
+  # Associates our public subnet with the public route table
+  SubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet
+      RouteTableId: !Ref PublicRouteTable
+
+# --- CRITICAL SECTION: Exports ---
+# These outputs are exported so other stacks can use them.
+Outputs:
+  VPCID:
+    Description: The ID of the VPC.
+    Value: !Ref VPC
+    Export:
+      Name: !Sub '${AWS::StackName}-VPCID' # Exports the VPC ID
+
+  PublicSubnetID:
+    Description: The ID of the public subnet.
+    Value: !Ref PublicSubnet
+    Export:
+      Name: !Sub '${AWS::StackName}-PublicSubnetID' # Exports the Subnet ID
