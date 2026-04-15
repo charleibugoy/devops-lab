@@ -15,12 +15,6 @@ output "cluster_name" {
   value       = aws_eks_cluster.main.name
 }
 
-# --- Load Balancer ---
-output "alb_dns_name" {
-  description = "The DNS name of the application load balancer"
-  value       = aws_lb.main.dns_name
-}
-
 # --- S3 ---
 output "s3_bucket_id" {
   description = "The name of the S3 bucket"
@@ -44,13 +38,8 @@ output "rds_db_password_secret_arn" {
   value       = aws_secretsmanager_secret.db_password.arn
 }
 
-# --- Workstation ---
-output "workstation_public_ip" {
-  description = "Public IP address of the workstation EC2 instance"
-  value       = aws_instance.workstation.public_ip
-}
-
-output "workstation_ssh_command" {
-  description = "Command to SSH into the workstation"
-  value       = "ssh -i /path/to/your/private_key.pem ec2-user@${aws_instance.workstation.public_ip}"
+# --- GitHub ---
+output "github_app_repo_url" {
+  description = "URL for the newly created GitHub repository containing app manifests"
+  value       = github_repository.app_repo.html_url
 }
