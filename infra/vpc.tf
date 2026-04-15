@@ -15,6 +15,7 @@ resource "aws_subnet" "public" {
   availability_zone       = element(data.aws_availability_zones.available.names, count.index)
   map_public_ip_on_launch = true
 
+  # --- CORRECTED TAGS ---
   tags = {
     Name                                      = "${var.project_name}-public-subnet-${count.index + 1}"
     "kubernetes.io/cluster/${var.cluster_name}" = "shared"
@@ -28,6 +29,7 @@ resource "aws_subnet" "private" {
   cidr_block        = element(var.private_subnets, count.index)
   availability_zone = element(data.aws_availability_zones.available.names, count.index)
 
+  # --- CORRECTED TAGS ---
   tags = {
     Name                                      = "${var.project_name}-private-subnet-${count.index + 1}"
     "kubernetes.io/cluster/${var.cluster_name}" = "shared"
