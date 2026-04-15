@@ -2,19 +2,15 @@ resource "aws_eks_cluster" "main" {
   name     = var.cluster_name
   role_arn = data.aws_iam_role.eks_cluster.arn
 
+  version = "1.28" 
+
   vpc_config {
     subnet_ids = concat(aws_subnet.public.*.id, aws_subnet.private.*.id)
   }
 }
 
-# Find the latest EKS-optimized Amazon Linux 2 AMI
-data "aws_ami" "eks_worker" {
-  filter {
-    name   = "name"
-    values = ["amazon-eks-node-${aws_eks_cluster.main.version}-v*"]
-  }
-  most_recent = true
-  owners      = ["602401143452"] # This is the AWS account ID for EKS-optimized AMIs
+data "aws_ssm_parameter" "eks_ami" {
+  name = "/aws/service/eks/optimized-ami/${aws_eks_cluster.main.version}/amazon-linux-2/recommended/image_id"
 }
 
 # The User Data script tells the EC2 instance how to join the cluster
@@ -29,8 +25,9 @@ data "template_file" "worker_userdata" {
 # A launch template defines the configuration for our EC2 worker nodes
 resource "aws_launch_template" "eks_worker" {
   name_prefix = "${var.cluster_name}-worker"
-  image_id    = data.aws_ami.eks_worker.id
-  instance_type = var.eks_node_instance_types[0] # Use the first instance type from the list
+  # Use the AMI ID retrieved from the SSM Parameter
+  image_id    = data.aws_ssm_parameter.eks_ami.value
+  instance_type = var.eks_node_instance_types[0]
 
   iam_instance_profile {
     arn = aws_iam_instance_profile.eks_node_profile.arn
