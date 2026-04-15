@@ -40,23 +40,3 @@ resource "aws_security_group" "rds" {
   }
 
   # Allow access from the EKS worker nodes
-  ingress {
-    description     = "PostgreSQL from EKS nodes"
-    from_port       = 5432
-    to_port         = 5432
-    protocol        = "tcp"
-    # This sources from the security group attached to the node group by EKS
-    source_security_group_id = aws_eks_cluster.main.vpc_config[0].cluster_security_group_id
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = {
-    Name = "${var.project_name}-rds-sg"
-  }
-}
