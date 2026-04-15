@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # DevOps Lab (AWS + EKS + GitOps + CI/CD)
 
 ## Stack
@@ -30,3 +31,8 @@ docker build -t devops-lab .
 
 ### 3. Deploy via ArgoCD
 Apply manifests in k8s/
+=======
+# devops-lab
+
+<img width="3138" height="785" alt="mermaid-diagram" src="https://github.com/user-attachments/assets/dacf4e64-0a27-4118-8a63-e8e8c01f34a4" />
+>>>>>>> 134409d88859eaf6234af35d2eb37d725007fe2c
