@@ -15,6 +15,12 @@ output "cluster_name" {
   value       = aws_eks_cluster.main.name
 }
 
+# --- Load Balancer ---
+output "alb_dns_name" {
+  description = "The DNS name of the application load balancer"
+  value       = aws_lb.main.dns_name
+}
+
 # --- S3 ---
 output "s3_bucket_id" {
   description = "The name of the S3 bucket"
