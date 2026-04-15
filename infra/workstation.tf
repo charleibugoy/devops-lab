@@ -1,4 +1,3 @@
-/*
 resource "aws_key_pair" "workstation" {
   key_name   = "${var.project_name}-workstation-key"
   public_key = var.workstation_public_key
@@ -27,4 +26,3 @@ resource "aws_instance" "workstation" {
     Name = "${var.project_name}-workstation"
   }
 }
-*/
