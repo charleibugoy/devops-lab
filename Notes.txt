@@ -1,0 +1,1 @@
+https://github.com/kodekloudhub/amazon-elastic-kubernetes-service-course/blob/main/docs/deploy.md
