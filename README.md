@@ -1,2 +1,3 @@
 # devops-lab
-<img width="4212" height="694" alt="mermaid-diagram" src="https://github.com/user-attachments/assets/8889e448-a43f-4893-b4f5-38437d516550" />
+
+<img width="3138" height="785" alt="mermaid-diagram" src="https://github.com/user-attachments/assets/dacf4e64-0a27-4118-8a63-e8e8c01f34a4" />
