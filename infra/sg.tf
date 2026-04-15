@@ -1,21 +1,38 @@
+# Security group for the self-managed EKS worker nodes
+resource "aws_security_group" "eks_node_sg" {
+  name        = "${var.project_name}-node-sg"
+  description = "Security group for EKS worker nodes"
+  vpc_id      = aws_vpc.main.id
+
+  # Allow all outbound traffic
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "${var.project_name}-node-sg"
+    # This tag is also required for the AWS Load Balancer Controller to work
+    "kubernetes.io/cluster/${var.cluster_name}" = "owned"
+  }
+}
+
 # Security group for the RDS instance
 resource "aws_security_group" "rds" {
   name        = "${var.project_name}-rds-sg"
   description = "Allow inbound traffic from EKS nodes"
   vpc_id      = aws_vpc.main.id
 
-  # Allow access from the EKS worker nodes.
-  # Note: This will need adjustment depending on your EKS node setup (managed vs. self-managed).
-  # This version is for the self-managed node setup.
+  # --- CORRECTED LINE ---
+  # Allow access from the security group attached to the EKS nodes
   ingress {
     description     = "PostgreSQL from EKS nodes"
     from_port       = 5432
     to_port         = 5432
     protocol        = "tcp"
-    # The source is the security group attached to the worker nodes' Launch Template or Node Group.
-    # In a self-managed setup, this would be a security group you create and attach.
-    # In a managed node group, EKS creates one. This example assumes a self-managed setup for consistency with previous steps.
-    security_groups = [aws_iam_instance_profile.eks_node_profile.id] # Placeholder - adjust as needed
+    security_groups = [aws_security_group.eks_node_sg.id]
   }
 
   egress {
