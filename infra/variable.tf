@@ -69,16 +69,14 @@ variable "db_instance_class" {
   default     = "db.t3.micro"
 }
 
-# --- Workstation ---
-variable "workstation_instance_type" {
-  description = "Instance type for the EC2 workstation"
+# --- GitHub ---
+variable "github_owner" {
+  description = "Your GitHub username or organization name"
   type        = string
-  default     = "t3.micro"
 }
 
-variable "workstation_public_key" {
-  description = "Your public SSH key to access the workstation. Example: 'ssh-rsa AAAA...'"
+variable "github_token" {
+  description = "A GitHub Personal Access Token with 'repo' permissions"
   type        = string
   sensitive   = true
 }
-
