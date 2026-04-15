@@ -1,12 +1,15 @@
-resource "aws_security_group" "workstation_sg" {
-  name   = "devops-workstation-sg"
-  vpc_id = module.vpc.vpc_id
+# Security group for the workstation to allow SSH access
+resource "aws_security_group" "workstation" {
+  name        = "${var.project_name}-workstation-sg"
+  description = "Allow SSH inbound traffic"
+  vpc_id      = aws_vpc.main.id
 
   ingress {
+    description = "SSH from anywhere"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"] # lab only
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress {
@@ -14,5 +17,46 @@ resource "aws_security_group" "workstation_sg" {
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "${var.project_name}-workstation-sg"
+  }
+}
+
+# Security group for the RDS instance
+resource "aws_security_group" "rds" {
+  name        = "${var.project_name}-rds-sg"
+  description = "Allow inbound traffic from EKS nodes and workstation"
+  vpc_id      = aws_vpc.main.id
+
+  # Allow access from the workstation
+  ingress {
+    description     = "PostgreSQL from workstation"
+    from_port       = 5432
+    to_port         = 5432
+    protocol        = "tcp"
+    security_groups = [aws_security_group.workstation.id]
+  }
+
+  # Allow access from the EKS worker nodes
+  ingress {
+    description     = "PostgreSQL from EKS nodes"
+    from_port       = 5432
+    to_port         = 5432
+    protocol        = "tcp"
+    # This sources from the security group attached to the node group by EKS
+    source_security_group_id = aws_eks_cluster.main.vpc_config[0].cluster_security_group_id
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "${var.project_name}-rds-sg"
   }
 }
