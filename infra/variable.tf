@@ -68,7 +68,7 @@ variable "db_instance_class" {
   type        = string
   default     = "db.t3.micro"
 }
-
+/*
 # --- GitHub ---
 variable "github_owner" {
   description = "Your GitHub username or organization name"
@@ -80,3 +80,4 @@ variable "github_token" {
   type        = string
   sensitive   = true
 }
+*/
