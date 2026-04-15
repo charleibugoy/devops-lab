@@ -37,9 +37,10 @@ output "rds_db_password_secret_arn" {
   description = "ARN of the Secrets Manager secret for the DB password"
   value       = aws_secretsmanager_secret.db_password.arn
 }
-
+/*
 # --- GitHub ---
 output "github_app_repo_url" {
   description = "URL for the newly created GitHub repository containing app manifests"
   value       = github_repository.app_repo.html_url
 }
+*/
